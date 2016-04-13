@@ -6,76 +6,62 @@ import java.io.IOException;
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.MidiUnavailableException;
+import javax.sound.midi.Receiver;
 import javax.sound.midi.Sequence;
 import javax.sound.midi.Sequencer;
+import javax.sound.midi.ShortMessage;
 
 public class Tocador {
 
-	Sequencer sequenciador;
-	Sequence sequencia;
+	private Sequencer sequenciador;
+	private Sequence sequencia;
+	private Receiver receptor = null;
 
 	public Tocador(File arquivoLeitura) {
-		inicializar(arquivoLeitura);
+		configurarSequencia(arquivoLeitura);
 	}
 
-	private void inicializar(File arquivoLeitura) {
+	private void configurarSequencia() {
 		try {
-			sequencia = MidiSystem.getSequence(arquivoLeitura);
 			sequenciador = MidiSystem.getSequencer();
 			sequenciador.setSequence(sequencia);
 			sequenciador.open();
+			receptor = sequenciador.getTransmitters().iterator().next().getReceiver();
+			sequenciador.getTransmitter().setReceiver(receptor);
 		} catch (InvalidMidiDataException e) {
 			System.out.println(e + " : Erro nos dados midi.");
-		} catch (IOException e) {
-			System.out.println(e + " : O arquivo midi não foi encontrado.");
-			System.out.println("Sintaxe: " + "java TocaMidi arquivo.mid");
 		} catch (MidiUnavailableException e) {
 			System.out.println(e + " : Dispositivo midi não disponível.");
 		}
 	}
-
+	private void configurarSequencia(File arquivoLeitura) {
+			try {
+				sequencia = MidiSystem.getSequence(arquivoLeitura);
+			} catch (InvalidMidiDataException | IOException e) {
+				e.printStackTrace();
+			}
+			configurarSequencia();
+	}
+	public void trocarArquivo(File novoArquivo) {
+		configurarSequencia(novoArquivo);
+	}
 	public void executar() {
 
-			exibirDados();
-			retardo(500);
-			sequenciador.start(); // --aqui começa a tocar.
-			// -----------------------------------------------
-
-			verificarExecucao();
-
-			System.out.println("");
-			System.out.println("* * * \n");
-
-			retardo(1000);
-			sequenciador.stop();
-			sequenciador.close();
-		
-	}
-
-	private void verificarExecucao() {
-		// -- O laço abaixo verifica (a cada 1 segundo) se a execução já está
-		// -- completada. Quando estiver, então o sequenciador será 'fechado';
-
-		int i = 0;
-		System.out.println("Instante em segundos: ");
-
-		long posicao;
-		int seg;
-		while (sequenciador.isRunning()) {
-			retardo(1000);
-			// ----exibir o instante real em segundos:---------
-			posicao = sequenciador.getMicrosecondPosition();
-			seg = Math.round(posicao * 0.000001f);
-			System.out.print(seg + " ");
-			i++;
-			if (i == 20) {
-				System.out.println("");
-				i = 0;
-			}
+		exibirDados();
+		retardo(500);
+		if(!sequenciador.isOpen()) {
+			configurarSequencia();
 		}
+		sequenciador.start(); // --aqui começa a tocar.
+		// -----------------------------------------------
+		System.out.println("");
+		System.out.println("* * * \n");
+
+		retardo(1000);
+
 	}
 
-	static void retardo(int miliseg) {
+	public void retardo(int miliseg) {
 		try {
 			Thread.sleep(miliseg);
 		} catch (InterruptedException e) {
@@ -104,5 +90,43 @@ public class Tocador {
 		System.out.println("---");
 
 		System.out.println("");
+	}
+
+	public Sequencer getSequenciador() {
+		return sequenciador;
+	}
+
+	public void setSequenciador(Sequencer sequenciador) {
+		this.sequenciador = sequenciador;
+	}
+
+	public Sequence getSequencia() {
+		return sequencia;
+	}
+
+	public void setSequencia(Sequence sequencia) {
+		this.sequencia = sequencia;
+	}
+
+	public void ajustarPosicaoMicroSegundo(long inicio) {
+		sequenciador.setMicrosecondPosition(inicio);
+
+	}
+
+	public boolean isRunning() {
+		return sequenciador.isRunning();
+	}
+
+	public void parar() {
+		sequenciador.stop();
+		sequenciador.close();
+	}
+
+	public void pausar() {
+		sequenciador.stop();
+	}
+
+	public void enviarMensagem(ShortMessage mensagem, int i) {
+		receptor.send(mensagem, -1);
 	}
 }
