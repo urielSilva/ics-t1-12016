@@ -11,6 +11,7 @@ import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.Sequence;
 import javax.sound.midi.ShortMessage;
+import javax.sound.midi.Track;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -25,7 +26,7 @@ import javax.swing.filechooser.FileFilter;
 public class GUI extends JFrame implements Runnable {
 
 	private int largura = 390;
-	private int altura = 280;
+	private int altura = 500;
 
 	private int posx = 400;
 	private int posy = 140;
@@ -38,12 +39,16 @@ public class GUI extends JFrame implements Runnable {
 	final JButton botaoTOCAR = GUIUtils.constroiBotao("\u25b6", 9);
 	final JButton botaoFAZERPAUSA = GUIUtils.constroiBotao("\u25ae\u25ae", 9);
 	final JButton botaoPARAR = GUIUtils.constroiBotao("\u25fc", 9);
+	final JButton botaoAJUSTAR = GUIUtils.constroiBotao("+", 9);
 
 	final JButton botaoMOSTRADORcaminho = GUIUtils.constroiBotao(" DIR: " + diretorio, 9);
 	final JButton botaoMOSTRADORarquivo = GUIUtils.constroiBotao(" Arquivo: ", 9);
 	final JButton botaoMOSTRADORduracao = GUIUtils.constroiBotao(" Dura\u00e7\u00e3o: ", 9);
 	final JButton botaoMOSTRADORinstante = GUIUtils.constroiBotao(" ", 9);
 	final JButton botaoMOSTRADORvalorvolume = GUIUtils.constroiBotao(" ", 9);
+	final JButton botaoMOSTRADORandamento = GUIUtils.constroiBotao("Andamento: ", 9);
+	final JButton botaoMOSTRADORtonalidade = GUIUtils.constroiBotao("Tonalidade: ", 9);
+	final JButton botaoMOSTRADORformcompasso = GUIUtils.constroiBotao("Compasso: ", 9);
 
 	Tocador tocador;
 	private long inicio = 0;
@@ -62,7 +67,7 @@ public class GUI extends JFrame implements Runnable {
 	}
 
 	public GUI() {
-		super("TocadorXis");
+		super("TocadorMidi");
 		GUIUtils.personalizarInterfaceUsuario();
 		configurarBotoes();
 
@@ -99,6 +104,7 @@ public class GUI extends JFrame implements Runnable {
 			sliderPROGRESSOinstante.setFocusable(false);
 			p5.add(sliderPROGRESSOinstante);
 			p5.add(botaoMOSTRADORinstante);
+			p5.add(botaoAJUSTAR);
 
 			// -----
 			botaoMOSTRADORcaminho.setBackground(corARQ);
@@ -106,9 +112,16 @@ public class GUI extends JFrame implements Runnable {
 			botaoMOSTRADORduracao.setBackground(corARQ);
 			botaoMOSTRADORinstante.setBackground(corARQ);
 			botaoMOSTRADORvalorvolume.setBackground(corARQ);
+			botaoMOSTRADORandamento.setBackground(corARQ);
+			botaoMOSTRADORtonalidade.setBackground(corARQ);
+			botaoMOSTRADORformcompasso.setBackground(corARQ);
 
 			p3.add(botaoMOSTRADORarquivo);
 			p4.add(botaoMOSTRADORduracao);
+			p4.add(botaoMOSTRADORandamento);
+			p4.add(botaoMOSTRADORtonalidade);
+			p4.add(botaoMOSTRADORformcompasso);
+
 			// painelOPERACOES.add(p3);
 			// painelOPERACOES.add(p4);
 
@@ -170,9 +183,18 @@ public class GUI extends JFrame implements Runnable {
 		botaoPARAR.setBackground(corOPR);
 
 		botaoABRIR.setEnabled(true);
+		botaoAJUSTAR.setEnabled(true);
 		botaoTOCAR.setEnabled(false);
 		botaoFAZERPAUSA.setEnabled(false);
 		botaoPARAR.setEnabled(false);
+		
+		//Botao para ajustar inicio da música - sofri
+		botaoAJUSTAR.addActionListener(e -> {
+			inicio += 10000;
+			System.out.println(inicio);
+
+			tocador.ajustarPosicaoMicroSegundo(inicio);
+		});
 
 		botaoABRIR.addActionListener(e -> abrir());
 
@@ -274,10 +296,19 @@ public class GUI extends JFrame implements Runnable {
 				}
 				Sequence sequencianova = MidiSystem.getSequence(arqseqnovo);
 				double duracao = sequencianova.getMicrosecondLength() / 1000000.0d;
-
+				double bpm = tocador.getAndamento(sequencianova, duracao);
+				Par    fc  =  null;
+				Track trilha[] = sequencianova.getTracks();
+				Track track = trilha[0];
+				String tonalidade = Tocador.getTonalidade(track);
+				fc = Tocador.getFormulaDeCompasso(track);
+				
 				botaoMOSTRADORarquivo.setText("Arquivo: \"" + arqseqnovo.getName() + "\"");
 				botaoMOSTRADORduracao.setText("\nDura\u00e7\u00e3o:" + formataInstante(duracao));
-
+				botaoMOSTRADORandamento.setText("andamento: " + Math.round(bpm));
+				botaoMOSTRADORtonalidade.setText("Tonalidade: " + tonalidade);
+				botaoMOSTRADORformcompasso.setText("Compasso: " + fc.getX() +":"+ (int)(Math.pow(2, fc.getY())));
+				
 				botaoTOCAR.setEnabled(true);
 				botaoFAZERPAUSA.setEnabled(false);
 				botaoPARAR.setEnabled(false);
@@ -333,8 +364,6 @@ public class GUI extends JFrame implements Runnable {
 		double m1 = (int) ((t1 - 3600 * h1) / 60);
 		double s1 = (t1 - (3600 * h1 + 60 * m1));
 
-		double h1r = t1 / 3600.0;
-		double m1r = (t1 - 3600 * h1) / 60.0f;
 		double s1r = (t1 - (3600 * h1 + 60 * m1));
 
 		String sh1 = "";
