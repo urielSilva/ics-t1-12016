@@ -19,13 +19,16 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
+import javax.swing.JScrollPane;
 import javax.swing.JSlider;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.filechooser.FileFilter;
 
 @SuppressWarnings("serial")
 public class GUI extends JFrame implements Runnable {
 
-	private int largura = 390;
+	private int largura = 490;
 	private int altura = 500;
 
 	private int posx = 400;
@@ -49,7 +52,12 @@ public class GUI extends JFrame implements Runnable {
 	final JButton botaoMOSTRADORandamento = GUIUtils.constroiBotao("Andamento: ", 9);
 	final JButton botaoMOSTRADORtonalidade = GUIUtils.constroiBotao("Tonalidade: ", 9);
 	final JButton botaoMOSTRADORformcompasso = GUIUtils.constroiBotao("Compasso: ", 9);
-
+	
+	final JTextArea area = new JTextArea(30,30);
+	final JScrollPane scroller = new JScrollPane(area);
+	
+	
+	
 	Tocador tocador;
 	private long inicio = 0;
 
@@ -65,7 +73,7 @@ public class GUI extends JFrame implements Runnable {
 		Thread thread = new Thread(gui);
 		thread.start();
 	}
-
+	
 	public GUI() {
 		super("TocadorMidi");
 		GUIUtils.personalizarInterfaceUsuario();
@@ -75,19 +83,24 @@ public class GUI extends JFrame implements Runnable {
 //		setIconImage(logo.getImage());
 
 		Color corARQ = new Color(230, 230, 228);
-
 		try {
 			JPanel p1 = new JPanel();
+			p1.setBackground(new Color(34, 102, 102));
 			JPanel p2 = new JPanel();
+			p2.setBackground(new Color(34, 102, 102));
 			JPanel p3 = new JPanel();
+			p3.setBackground(new Color(34, 102, 102));
 			JPanel p4 = new JPanel();
+			p4.setBackground(new Color(34, 102, 102));
 			JPanel p5 = new JPanel();
+			p5.setBackground(new Color(34, 102, 102));
 			JPanel p6 = new JPanel();
+			p6.setBackground(new Color(34, 102, 102));
 
 			JPanel painelOPERACOES = new JPanel();
 
 			painelOPERACOES.setLayout(new GridLayout(3, 0));
-			painel.setLayout(new GridLayout(7, 0));
+			painel.setLayout(new GridLayout(6, 0));
 
 			// -----
 			p1.add(botaoMOSTRADORcaminho);
@@ -115,7 +128,8 @@ public class GUI extends JFrame implements Runnable {
 			botaoMOSTRADORandamento.setBackground(corARQ);
 			botaoMOSTRADORtonalidade.setBackground(corARQ);
 			botaoMOSTRADORformcompasso.setBackground(corARQ);
-
+			area.setSize(400, 400);
+			p3.add(scroller);
 			p3.add(botaoMOSTRADORarquivo);
 			p4.add(botaoMOSTRADORduracao);
 			p4.add(botaoMOSTRADORandamento);
@@ -133,14 +147,18 @@ public class GUI extends JFrame implements Runnable {
 			p6.add(sliderVolume);
 
 			p6.add(botaoMOSTRADORvalorvolume);
-
-			painel.add(p1);
+			
+			
 			// painel.add(painelOPERACOES);
-			painel.add(p2);
-			painel.add(p3);
 			painel.add(p4);
+			painel.add(p2);
 			painel.add(p5);
+			
+			
+			painel.add(p3);
+			painel.add(p1);
 			painel.add(p6);
+			
 
 			botaoMOSTRADORvalorvolume.setText("" + (volumeATUAL * 100) / 127 + "%");
 
@@ -187,10 +205,9 @@ public class GUI extends JFrame implements Runnable {
 		botaoTOCAR.setEnabled(false);
 		botaoFAZERPAUSA.setEnabled(false);
 		botaoPARAR.setEnabled(false);
-		
 		//Botao para ajustar inicio da música - sofri
 		botaoAJUSTAR.addActionListener(e -> {
-			inicio += 10000;
+			inicio += 100000;
 			System.out.println(inicio);
 
 			tocador.ajustarPosicaoMicroSegundo(inicio);
@@ -211,9 +228,11 @@ public class GUI extends JFrame implements Runnable {
 	public void tocar(String caminho, long inicio) {
 		try {
 			File arqmidi = new File(caminho);
-
+			
 			botaoMOSTRADORarquivo.setText("Arquivo: \"" + arqmidi.getName() + "\"");
-			tocador.executar();
+			String dados = tocador.executar();
+			area.setText(dados);
+			area.setCaretPosition(0);
 			long duracao = tocador.getSequenciador().getMicrosecondLength() / 1000000;
 			botaoMOSTRADORduracao.setText("\nDura\u00e7\u00e3o:" + formataInstante(duracao));
 			botaoMOSTRADORinstante.setText(formataInstante(0));
@@ -313,7 +332,7 @@ public class GUI extends JFrame implements Runnable {
 				botaoFAZERPAUSA.setEnabled(false);
 				botaoPARAR.setEnabled(false);
 			} catch (Throwable e1) {
-				System.out.println("Erro em carregaArquivoMidi: " + e1.toString());
+				e1.printStackTrace();
 			}
 		}
 		

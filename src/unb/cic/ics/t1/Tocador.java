@@ -52,9 +52,9 @@ public class Tocador {
 	public void trocarArquivo(File novoArquivo) {
 		configurarSequencia(novoArquivo);
 	}
-	public void executar() throws InvalidMidiDataException {
+	public String executar() throws InvalidMidiDataException {
 
-		exibirDados();
+		String dados = exibirDados();
 		retardo(500);
 		if(!sequenciador.isOpen()) {
 			configurarSequencia();
@@ -65,6 +65,7 @@ public class Tocador {
 		System.out.println("* * * \n");
 
 		retardo(1000);
+		return dados;
 
 	}
 
@@ -111,7 +112,7 @@ public class Tocador {
 		return bpm;
 	}
 
-	private void exibirDados() throws InvalidMidiDataException {
+	private String exibirDados() throws InvalidMidiDataException {
 		long duracao = sequencia.getMicrosecondLength() / 1000000;
 		int resolucao = sequencia.getResolution();
 		long totaltiques = sequencia.getTickLength();
@@ -120,7 +121,7 @@ public class Tocador {
 		float durseminima = durtique * resolucao;
 		float bpm = 60 / durseminima;
 		int totalseminimas = (int) (duracao / durseminima);
-
+		StringBuilder sb = new StringBuilder();
 		System.out.println("");
 		System.out.println("------------------------------------------");
 		System.out.println("resolução            = " + resolucao + " tiques   (número de divisões da semínima)");
@@ -138,8 +139,10 @@ public class Tocador {
         
         for(int i=0; i<trilhas.length; i++)
         {
-          System.out.println("Início da trilha nº " + i + " **********************");
-          System.out.println("------------------------------------------");
+          sb.append("Início da trilha nº " + i + " **********************");
+          sb.append("\n");
+          sb.append("------------------------------------------");
+          sb.append("\n");
           Track trilha =  trilhas[i];
           
           Par    fc  =  null;
@@ -164,16 +167,22 @@ public class Tocador {
           catch(Exception e){}
           
           if(fc!=null)
-           System.out.println("Fórmula de Compasso: " + fc.getX() +":"+ (int)(Math.pow(2, fc.getY())) );
+        	  sb.append("Fórmula de Compasso: " + fc.getX() +":"+ (int)(Math.pow(2, fc.getY())) );
       
-           System.out.println("Tonalidade         : " + st);
-           System.out.println("Texto              : " + stx);
-           System.out.println("------------------------------------------");
+          sb.append("Tonalidade         : " + st);
+          sb.append("\n");
+          sb.append("Texto              : " + stx);
+          sb.append("\n");
+          sb.append("------------------------------------------");
+          sb.append("\n");
            
            for(int j=0; j<trilha.size(); j++)
            {
-             System.out.println("Trilha nº " + i );
-             System.out.println("Evento nº " + j);
+        	   sb.append("Trilha nº " + i );
+        	   sb.append("\n");
+        	   sb.append("Evento nº " + j);
+        	   sb.append("\n");
+        	   
              MidiEvent   e          = trilha.get(j);
              MidiMessage mensagem   = e.getMessage();
              long        tique      = e.getTick();
@@ -190,13 +199,18 @@ public class Tocador {
                  //---(introduzir outros casos)
              }
              
-             System.out.println("       Mensagem: " + nomecomando );
-             System.out.println("       Instante: " + tique );
-             System.out.println("------------------------------------------");                                    
+             sb.append("       Mensagem: " + nomecomando );
+             sb.append("\n");
+             sb.append("       Instante: " + tique );
+             sb.append("\n");
+             sb.append("------------------------------------------");
+             sb.append("\n");
+             
            }
            
         }
-		
+        return sb.toString();
+		 
 	}
 	
 	 static final int MENSAGEM_TEXTO = 0x01;  
